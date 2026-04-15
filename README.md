@@ -17,10 +17,8 @@ If you don't have a Kubernetes cluster running, you can use Minikube to use Dock
 ## Kubectl
 
 You need a way to interact with your Kubernetes cluster.
-You can either install kubectl directly, or use a work-around to make it work for now.
 
-- Option 1: Go to [Kubernetes docs](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) to download kubectl.
-- Option 2: Minikube can download kubectl for you. Run `alias kubectl="minikube kubectl"` and then `kubectl`.
+- Go to [Kubernetes docs](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) to download kubectl.
 
 ## FluxCD
 
@@ -76,7 +74,7 @@ You can either install kubectl directly, or use a work-around to make it work fo
 1. First, create a directory for LinkDing: `mkdir ./apps/staging/linkding`
 2. Next, create the Kubernetes manifest file for the deployment: `kubectl create deployment linkding --namespace linkding --replicas 1 --image=sissbruecker/linkding:latest --dry-run=client -o yaml > ./apps/staging/linkding/deployment.yaml`
 3. Next, create the Kubernetes manifest file for the namespace: `kubectl create namespace linkding --dry-run=client -o yaml > ./apps/staging/linkding/namespace.yaml`
-4. Next, create a Kustomize file to tell FluxCD to apply these two manifest files:
+4. Next, create a Kustomize file with `touch ./apps/staging/linkding/kustomization.yaml` to tell FluxCD to apply these two manifest files:
 ```
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -93,7 +91,7 @@ resources:
 ### LinkDing Admin User
 
 1. To create an admin user via a secret, run `kubectl create secret generic linkding-secret --namespace linkding --from-literal=LD_SUPERUSER_NAME=admin --from-literal=LD_SUPERUSER_PASSWORD=1234 --dry-run=client -o yaml > ./apps/staging/linkding/secret.yaml`
-2. Change the Kustomization file to include the secret.yaml file.
+2. Change the Kustomization file to include the secret.yaml file with `vim ./apps/staging/linkding/kustomization.yaml`
 ```
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -102,7 +100,7 @@ resources:
   - namespace.yaml
   - secret.yaml
 ```
-3. Change the deployment.yaml file inside "./apps/staging/linkding/" to use the secret:
+3. Change the deployment.yaml file with `vim ./apps/staging/linkding/deployment.yaml` to use the secret:
 ```
 apiVersion: apps/v1
 kind: Deployment
@@ -136,19 +134,19 @@ status: {}
 
 ### Understanding the problem
 
-1. Check out our secret.yaml file: `cat /apps/staging/linkding/secret.yaml`
+1. Check out our secret.yaml file: `cat ./apps/staging/linkding/secret.yaml`
 2. Copy the value of the secret's values and put them into this command `echo 'STRING HERE' | base64 --decode`.
 
 ### Using SOPS
 
 1. Install the sops and age cli: `brew install age sops`
 2. Generate a public and private key using age: `age-keygen -o age.agekey`
-3. Encrypt the secret using the age public key `sops --age=<public key> --encrypt --encrypted-regex '^(data|stringData)$' --in-place /apps/staging/linkding/secret.yaml`
-4. Then, print out the secret.yaml file again: `cat /apps/staging/linkding/secret.yaml`
+3. Encrypt the secret using the age public key `sops --age=<public key> --encrypt --encrypted-regex '^(data|stringData)$' --in-place ./apps/staging/linkding/secret.yaml`
+4. Then, print out the secret.yaml file again: `cat ./apps/staging/linkding/secret.yaml`
 
 ### Making FluxCD use SOPS
 
-1. Change our "apps.yaml" file inside the "/clusters/staging/" folder to the following:
+1. Change our "apps.yaml" file inside via `vim ./clusters/staging/apps.yaml` folder to the following:
 ```
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -169,7 +167,7 @@ spec:
       name: sops-age
 ```
     - The last four lines are the important ones. They tell FluxCD to use SOPS and use the Kubernetes secret "sops-age" as the decryption key. This will be the private key.
-2. Create a ".sops.yaml" file inside "/clusters/staging" folder with the following:
+2. Create a ".sops.yaml" file with `vim ./clusters/staging/.sops.yaml` folder with the following:
 ```
 creation_rules:
   - path_regex: .*.yaml
@@ -178,3 +176,5 @@ creation_rules:
 ```
     - This tells FluxCD which files and what lines to look out for.
 3. Finally, create a Kubernetes secret that includes the private key. Do not create it by uploading it, but by adding it manually. `kubectl create secret generic sops-age --namespace=flux-system --from-literal=age.agekey=<private key>`
+4. Commit everything, except the "age.agekey".
+5. Once everything is recreated, run `kubectl port-forward --namespace linkding linkding-<id>-<id> 9090:9090` once more and log-in.
