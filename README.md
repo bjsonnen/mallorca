@@ -10,16 +10,16 @@
 
 If you don't have a Kubernetes cluster running, you can use Minikube to use Docker containers as nodes.
 
-1. Go to minikube install
+1. Go to [Minikube Installation](https://minikube.sigs.k8s.io/docs/start/)
 2. Pick the right OS and arcitecture for your system
-3. Run "minikube start --nodes 4"
+3. Run "minikube start"
 
 ## Kubectl
 
 You need a way to interact with your Kubernetes cluster.
 You can either install kubectl directly, or use a work-around to make it work for now.
 
-- Option 1: Go to <link> to download kubectl.
+- Option 1: Go to [Kubernetes docs](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) to download kubectl.
 - Option 2: Minikube can download kubectl for you. Run `alias kubectl="minikube kubectl"` and then `kubectl`.
 
 ## FluxCD
@@ -46,7 +46,20 @@ You can either install kubectl directly, or use a work-around to make it work fo
 
 ### Setting up FluxCD (Gitlab)
 
-- Go to [FluxCD Docs](https://fluxcd.io/flux/installation/bootstrap/gitlab/) and follow their steps.
+1. First, install the FluxCD CLI: `brew install fluxcd/tap/flux`
+
+![Step 1 Gitlab](images/gl_step1.png)
+![Step 2 Gitlab](images/gl_step2.png)
+![Step 3 Gitlab](images/gl_step3.png)
+![Step 4 Gitlab](images/gl_step4.png)
+![Step 5 Gitlab](images/gl_step5.png)
+![Step 6 Gitlab](images/gl_step6.png)
+![Step 7 Gitlab](images/gl_step7.png)
+
+3. Export that Gitlab token via `export GITLAB_TOKEN=<token>`
+4. Run this command to bootstrap Flux: `flux bootstrap gitlab --deploy-token-auth --owner=<username> --repository=<repo> --branch=master --path=clusters/my-cluster --personal`
+    - This will install FluxCD onto the Kubernetes cluster.
+    - This will create a git repo called "<repo>" under your username.
 
 ### Configuring the git repo
 
