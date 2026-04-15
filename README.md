@@ -166,6 +166,7 @@ spec:
     secretRef:
       name: sops-age
 ```
+
     - The last four lines are the important ones. They tell FluxCD to use SOPS and use the Kubernetes secret "sops-age" as the decryption key. This will be the private key.
 2. Create a ".sops.yaml" file with `vim ./clusters/staging/.sops.yaml` folder with the following:
 ```
@@ -174,6 +175,7 @@ creation_rules:
     encrypted_regex: ^(data|stringData)$
     age: <public key>
 ```
+
     - This tells FluxCD which files and what lines to look out for.
 3. Finally, create a Kubernetes secret that includes the private key. Do not create it by uploading it, but by adding it manually. `kubectl create secret generic sops-age --namespace=flux-system --from-literal=age.agekey=<private key>`
 4. Commit everything, except the "age.agekey".
