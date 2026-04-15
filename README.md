@@ -147,6 +147,7 @@ status: {}
 ### Making FluxCD use SOPS
 
 1. Change our "apps.yaml" file inside via `vim ./clusters/staging/apps.yaml` folder to the following:
+    - The last four lines are the important ones. They tell FluxCD to use SOPS and use the Kubernetes secret "sops-age" as the decryption key. This will be the private key.
 ```
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -167,8 +168,8 @@ spec:
       name: sops-age
 ```
 
-    - The last four lines are the important ones. They tell FluxCD to use SOPS and use the Kubernetes secret "sops-age" as the decryption key. This will be the private key.
 2. Create a ".sops.yaml" file with `vim ./clusters/staging/.sops.yaml` folder with the following:
+    - This tells FluxCD which files and what lines to look out for.
 ```
 creation_rules:
   - path_regex: .*.yaml
@@ -176,7 +177,6 @@ creation_rules:
     age: <public key>
 ```
 
-    - This tells FluxCD which files and what lines to look out for.
 3. Finally, create a Kubernetes secret that includes the private key. Do not create it by uploading it, but by adding it manually. `kubectl create secret generic sops-age --namespace=flux-system --from-literal=age.agekey=<private key>`
 4. Commit everything, except the "age.agekey".
 5. Once everything is recreated, run `kubectl port-forward --namespace linkding linkding-<id>-<id> 9090:9090` once more and log-in.
